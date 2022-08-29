@@ -1,0 +1,15 @@
+<template>
+    <lightning-card title={trackerObjectName} icon-name="standard:calculated_insights">
+        <div class="slds-progress slds-progress_vertical slds-m-left_small">
+            <ol class="slds-progress__list">
+                <template for:each={orderedFieldSettings} for:item="fieldSetting">
+                    <li key={fieldSetting} class="slds-progress__item">
+                        <span>
+                            <c-progress-element field-setting={fieldSetting}></c-progress-element>
+                        </span>
+                    </li>
+                </template>
+            </ol>
+        </div>
+    </lightning-card>
+</template>

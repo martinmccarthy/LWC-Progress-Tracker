@@ -1,0 +1,41 @@
+<template>
+    <li class={taskClass}>
+        <!-- This is a group of icon holders for the progress of the current list element
+            In order: Completed, Active, and not in progress or complete -->
+        <template if:true={isCompleted}>
+            <span class="slds-icon_container slds-icon-utility-success slds-progress__marker slds-progress__marker_icon" title="Complete">
+                <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+                <span class="slds-assistive-text">Complete</span>
+            </span>
+        </template>
+        <template if:true={isActive}>
+            <div class="slds-progress__marker">
+                <span class="slds-assistive-text">Active</span>
+            </div>
+        </template>
+
+        <!-- This contains the information that the element stores, lightning-layout
+                is utilized for visual layout purposes -->
+        <div class="slds-progress__item_content slds-grid slds-grid_align-spread">
+            <lightning-layout multiple-rows>
+                <lightning-layout-item size="12">
+                    <h1>{fieldSetting.name}</h1>
+                </lightning-layout-item>
+                <lightning-layout-item size="12">
+                    <ul class="slds-list_dotted">
+                        <template for:each={orderedResources} for:item="resource">
+                            <div key={resource}>
+                                <c-progress-resource resource={resource}></c-progress-resource>
+                            </div>
+                        </template>
+                    </ul>
+                    <!--<ul class="slds-list_dotted">
+                        <template for:each={orderedResources} for:item="resource">
+                            <c-progress-resource key={resource.order} resource={resource}></c-progress-resource>
+                        </template>
+                    </ul>-->
+                </lightning-layout-item>
+            </lightning-layout>
+        </div>
+    </li>
+</template>
