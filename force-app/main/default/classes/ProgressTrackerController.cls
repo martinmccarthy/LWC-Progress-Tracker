@@ -1,110 +1,111 @@
 public with sharing class ProgressTrackerController {
     public class TrackerObjectSetting {
         Id id;
-        String name;
-        Boolean isActive;
-        String objectName;
-        FieldSetting[] fieldSettings;
+        String strName;
+        Boolean boolIsActive;
+        String strObjectName;
+        FieldSetting[] listProgressTrackerFieldSettings;
     }
 
     public class FieldSetting {
         Id id;
-        String name;
-        String fieldAPIName;
-        Boolean isActive;
-        Boolean isComplete;
-        Integer order;
-        Resource[] resources;
+        String strName;
+        String strFieldAPIName;
+        Boolean boolIsActive;
+        Boolean boolIsComplete;
+        Integer intOrder;
+        Resource[] listProgressTrackerResources;
     }
 
     public class Resource {
-        String info;
-        String link;
-        Boolean isActive;
-        Integer order;
+        String strLabel;
+        String strLink;
+        Boolean boolIsActive;
+        Integer intOrder;
     }
 
-    // Cache issue here
     @AuraEnabled(cacheable=false)
     public static String getProgressTrackerObjectSettings(String ObjectSettingId, String recordId){
-        Id key = ObjectSettingId;
-        Progress_Tracker_Object_Setting__mdt objectSettings = 
-                [SELECT Id, IsActive__c, Object_Name__c, Label
-                FROM Progress_Tracker_Object_Setting__mdt
-                WHERE Id = :key];
-        List<Progress_Tracker_Field_Setting__mdt> fieldSettings = [SELECT Id, IsActive__c, Label, Field_API_Name__c, IsComplete__c, Order__c, Progress_Tracker_Object_Setting__c 
-                                                                   FROM Progress_Tracker_Field_Setting__mdt 
-                                                                   WHERE Progress_Tracker_Object_Setting__r.Id = :key];
+        Id progressTrackerObjectSettingKey = ObjectSettingId;
+        Progress_Tracker_Object_Setting__mdt queriedObjectSetting = 
+            [SELECT Id, IsActive__c, 
+             Object_Name__c, Label 
+             FROM Progress_Tracker_Object_Setting__mdt WHERE Id = :progressTrackerObjectSettingKey];
+        
+        List<Progress_Tracker_Field_Setting__mdt> listProgressTrackerFieldSettings = 
+            [SELECT Id, IsActive__c, Label, Field_API_Name__c, IsComplete__c, Order__c, Progress_Tracker_Object_Setting__c 
+             FROM Progress_Tracker_Field_Setting__mdt 
+             WHERE Progress_Tracker_Object_Setting__r.Id = :progressTrackerObjectSettingKey];
         
         TrackerObjectSetting trackerObjectSetting = new TrackerObjectSetting();
-        trackerObjectSetting.id = objectSettings.Id;
-        trackerObjectSetting.name = objectSettings.Label;
-        trackerObjectSetting.isActive = objectSettings.IsActive__c;
-        trackerObjectSetting.objectName = objectSettings.Object_Name__c;
+        trackerObjectSetting.id = queriedObjectSetting.Id;
+        trackerObjectSetting.strName = queriedObjectSetting.Label;
+        trackerObjectSetting.boolIsActive = queriedObjectSetting.IsActive__c;
+        trackerObjectSetting.strObjectName = queriedObjectSetting.Object_Name__c;
+        trackerObjectSetting.listProgressTrackerFieldSettings = new List<FieldSetting>();
         
-        trackerObjectSetting.fieldSettings = new List<FieldSetting>();
         String fieldAPINames = '';
-        for(Progress_Tracker_Field_Setting__mdt fieldSetting : fieldSettings) {
+        for(Progress_Tracker_Field_Setting__mdt currentFieldSetting : listProgressTrackerFieldSettings) {
             if(fieldAPINames == '') {
-                fieldAPINames += fieldSetting.Field_API_Name__c;
+                fieldAPINames += currentFieldSetting.Field_API_Name__c;
             }
             else {
-                fieldAPINames +=  ', ' + fieldSetting.Field_API_Name__c;
+                fieldAPINames +=  ', ' + currentFieldSetting.Field_API_Name__c;
             }
         }
-        List<SObject> objectList;
-        SObject currentObject;
+
+        List<SObject> listRecordPageFields;
+        SObject currentRecordPageField;
         if(fieldAPINames.length() > 0) {
             try {
-                objectList = Database.query('SELECT ' + fieldAPINames + ' FROM ' + trackerObjectSetting.objectName + ' WHERE Id =\'' + recordId + '\'');
-                if(objectList.size() > 0) {
-                    currentObject = objectList[0];
+                listRecordPageFields = Database.query('SELECT ' + fieldAPINames + ' FROM ' + trackerObjectSetting.strObjectName + ' WHERE Id =\'' + recordId + '\'');
+                if(listRecordPageFields.size() > 0) {
+                    currentRecordPageField = listRecordPageFields[0];
                 }
             }
             catch(Exception ex) {
                 System.debug(ex);
             }
-
         }
         
-        for(Progress_Tracker_Field_Setting__mdt fieldSetting : fieldSettings) {
-            FieldSetting newSetting = new FieldSetting();
-            newSetting.id = fieldSetting.Id;
-            newSetting.isActive = fieldSetting.IsActive__c;
+        for(Progress_Tracker_Field_Setting__mdt currentFieldSetting : listProgressTrackerFieldSettings) {
+            FieldSetting newProgressTrackerFieldSetting = new FieldSetting();
+            newProgressTrackerFieldSetting.id = currentFieldSetting.Id;
+            newProgressTrackerFieldSetting.boolIsActive = currentFieldSetting.IsActive__c;
             
-            if(currentObject == null) {
-                newSetting.isComplete = false;
+            if(currentRecordPageField == null) {
+                newProgressTrackerFieldSetting.boolIsComplete = false;
             }
-            else if(currentObject.getSobjectType().getDescribe().fields.getMap().keySet().contains(fieldSetting.Field_API_Name__c.toLowerCase())) {
-                if(currentObject.get(fieldSetting.Field_API_Name__c) == true) {
-                    newSetting.isComplete = true;
+            else if(currentRecordPageField.getSobjectType().getDescribe().fields.getMap().progressTrackerObjectSettingKeySet().contains(currentFieldSetting.Field_API_Name__c.toLowerCase())) {
+                if(currentRecordPageField.get(currentFieldSetting.Field_API_Name__c) == true) {
+                    newProgressTrackerFieldSetting.boolIsComplete = true;
                 }
                 else {
-                    newSetting.isComplete = false;
+                    newProgressTrackerFieldSetting.boolIsComplete = false;
                 }    
             }
-            else {
-                newSetting.isComplete = false;
+            else { // Fail case
+                newProgressTrackerFieldSetting.boolIsComplete = false;
             }
-            // query(0065400000HRSkeAAH.fieldAPIName) -> getFields -> if fieldAPIName === true -> isComplete = true;
-            newSetting.name = fieldSetting.Label;
-            newSetting.order = Integer.valueOf(fieldSetting.Order__c);
-            newSetting.fieldAPIName = fieldSetting.Field_API_Name__c;
-            newSetting.resources = new List<Resource>();
-            List<Progress_Tracker_Resource__mdt> progressResources = [SELECT Id, Label, Link__c, IsActive__c, Order__c
+
+            newProgressTrackerFieldSetting.strName = currentFieldSetting.Label;
+            newProgressTrackerFieldSetting.intOrder = Integer.valueOf(currentFieldSetting.Order__c);
+            newProgressTrackerFieldSetting.strFieldAPIName = currentFieldSetting.Field_API_Name__c;
+            newProgressTrackerFieldSetting.listProgressTrackerResources = new List<Resource>();
+            // Queries the Resources associated with the current Progress Tracker Field Setting
+            List<Progress_Tracker_Resource__mdt> listProgressTrackerResources = [SELECT Id, Label, Link__c, IsActive__c, Order__c
                                                                       FROM Progress_Tracker_Resource__mdt
-                                                                      WHERE Progress_Tracker_Field_Setting__r.Id =: fieldSetting.id];
-            for(Progress_Tracker_Resource__mdt resource : progressResources) {
+                                                                      WHERE Progress_Tracker_Field_Setting__r.Id =: currentFieldSetting.id];
+            for(Progress_Tracker_Resource__mdt currentResource : listProgressTrackerResources) {
                 Resource newResource = new Resource();
-                newResource.info = resource.Label;
-                newResource.link = resource.Link__c;
-                newResource.isActive = resource.IsActive__c;
-                newResource.order = Integer.valueOf(resource.Order__c);
-                newSetting.resources.add(newResource);
+                newResource.strLabel = currentResource.Label;
+                newResource.strLink = currentResource.Link__c;
+                newResource.boolIsActive = currentResource.IsActive__c;
+                newResource.intOrder = Integer.valueOf(currentResource.Order__c);
+                newProgressTrackerFieldSetting.listProgressTrackerResources.add(newResource);
             }
-            trackerObjectSetting.fieldSettings.add(newSetting);
+            trackerObjectSetting.listProgressTrackerFieldSettings.add(newProgressTrackerFieldSetting);
         }
-        System.debug(JSON.serialize(trackerObjectSetting));
         return JSON.serialize(trackerObjectSetting);
     }
 }

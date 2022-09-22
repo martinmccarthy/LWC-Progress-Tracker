@@ -1,8 +1,7 @@
 <template>
-    <template if:true={resource.isActive}>
+    <template if:true={resource.boolIsActive}>
         <li>
-            <a href={resource.link}>{resource.info}</a>
+            <a href={resource.strLink}>{resource.strLabel}</a>
         </li>
     </template>
-
 </template>

@@ -19,7 +19,7 @@
         <div class="slds-progress__item_content slds-grid slds-grid_align-spread">
             <lightning-layout multiple-rows>
                 <lightning-layout-item size="12">
-                    <h1>{fieldSetting.name}</h1>
+                    <h1>{fieldSetting.strName}</h1>
                 </lightning-layout-item>
                 <lightning-layout-item size="12">
                     <ul class="slds-list_dotted">
@@ -29,11 +29,6 @@
                             </div>
                         </template>
                     </ul>
-                    <!--<ul class="slds-list_dotted">
-                        <template for:each={orderedResources} for:item="resource">
-                            <c-progress-resource key={resource.order} resource={resource}></c-progress-resource>
-                        </template>
-                    </ul>-->
                 </lightning-layout-item>
             </lightning-layout>
         </div>
